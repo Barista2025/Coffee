@@ -1,15 +1,15 @@
 import yfinance as yf
 import numpy as np
 import pandas as pd
-import sys 
+import sys
 import os
-import matplotlib as mpl 
+import matplotlib as mpl
 mpl.use('Qt5Agg')
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import talib
 import math
-import time 
+import time
 
 from sklearn.metrics import confusion_matrix, classification_report
 
@@ -18,66 +18,58 @@ def is_coffee_and_handle(STK,START,END):
     price = yf.Ticker(STK).history(start=START,end=END, interval='1d').Close
     date = yf.Ticker(STK).history(start=START,end=END, interval='1d').index
     l = len(price)
-    for i in range(l-1,0,-1):
+    next_cup = False
+    cup_id = 1
+    i = l-1
+    while i>0:
         if price.iloc[i]>price.iloc[i-1]:
             j = i-1 #pivot1
-    
             # 條件：往前推35天內，是否有價格 >= price[j]
             lookback_window = 35
-            left_found = False
-            for t in range(j - lookback_window):
-                if price.iloc[t] >= price.iloc[j]:
-                    left_found = True
-                    left_idx = t 
-                    break
-            if not left_found:
-                continue  # 不符合右緣條件，繼續往前掃
-    
             handle_right=j
             for k in range(j-1,0,-1):
-                if price.iloc[k]<price.iloc[j]:
+                if next_cup:
+                    print("New i:"+str(i)+" "+str(date[i].date()))
+                    next_cup = False
                     break
-
-            handle_right=j
-            for k in range(j-1,0,-1):
                 if price.iloc[k]<price.iloc[j]:
                     break
                 if price.iloc[k]>price.iloc[k-1]:
-                    print("p(k)="+str(price.iloc[k])+" period="+str(j-k)+" ratio="+str(price.iloc[k]/price.iloc[j]))
+                    #print("p(k)="+str(price.iloc[k])+" period="+str(j-k)+" ratio="+str(price.iloc[k]/price.iloc[j]))
+                    print("Debug i:"+str(i)+" "+str(date[i].date()))
                     r = k #cup right point
-                    if ((handle_right-r)<5) or (price.iloc[r]>(price.iloc[handle_right]*1.12)):
+                    if ((j-r)>10) or ((handle_right-r)<5) or (price.iloc[r]>(price.iloc[handle_right]*1.12)):
                         continue
-                    if (k==42):
-                        print("In "+str(price.iloc[k]))
-                    for p in range(r-1,0,-1):
-                        if (k==42):
-                            print("In2 "+str(price.iloc[k]))
-                        if price.iloc[p] > price.iloc[r]:
-                            if (k==42):
-                                print("In3 "+str(price.iloc[k]))
+                    for p in range(r-1,-1,-1):
+                        if ((r-p)>=lookback_window) and (price.iloc[p] > price.iloc[r]) and (price.iloc[p]<=(1.07*price.iloc[r])):
+                            left_idx = p
                             print("Found potential Cup and Handle")
-                            print(f"Right edge price: {price.iloc[handle_right]:.2f} @ {date[handle_right].date()}")
-                            print(f"Left point higher than right: {price.iloc[left_idx]:.2f} @ {date[left_idx].date()}")
+                            print(f"Right edge price: {price.iloc[handle_right]} @ {date[handle_right].date()}")
+                            print(f"Left point higher than right: {price.iloc[left_idx]} @ {date[left_idx].date()}")
                             print(str(price.iloc[handle_right])+" "+str(date[handle_right]))
                             fig,ax=plt.subplots()
-                            #for t in range(r,j):
-                            print("r < r+1 = "+str(price.iloc[r]<price.iloc[r+1]))
                             ax.plot(price.iloc[left_idx:handle_right+1],label='Price')
-                            ax.plot(date[r+1], price.iloc[r+1], 'ro', label='Cup Bottom')
-                            ax.plot(date[handle_right], price.iloc[handle_right], 'bo', label='Right Edge')
-                            ax.plot(date[left_idx], price.iloc[left_idx], 'go', label='Left High')
+                            ax.plot(date[r], price.iloc[r], 'ro', label='Cup Right')
+                            ax.plot(date[handle_right], price.iloc[handle_right], 'bo', label='Handle Right')
+                            ax.plot(date[left_idx], price.iloc[left_idx], 'go', label='Cup Left')
                             ax.legend()
                             y_min = price.iloc[left_idx:handle_right+1].min()
                             y_max = price.iloc[left_idx:handle_right+1].max()
                             ax.set_ylim(y_min * 0.95, y_max * 1.10)  # 下壓 5%、上留 10%
                             ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=30))  # 最多顯示 10 格
-
-
+                            plt.title(STK+" cup "+str(cup_id))
+                            cup_id += 1
                             plt.show()
-                            return True
+                            next_cup = True
+                            print("Assume p:"+str(p)+" "+str(date[p].date()))
+                            i = p
+                            break
+                        if price.iloc[p]>(1.07*price.iloc[r]):
+                            break
+        i -= 1
     return False
 
-dict = {'NVDA':('2015-12-30','2016-05-12')}
-stocks = ['NVDA']#,'AMBA']
+dict = {'AMBA':('2020-04-03','2025-04-03'),'NVDA':('2015-12-30','2022-10-14'),'META':('2020-04-03','2025-04-03'),'TSM':('2020-04-03','2025-04-03'),'SBUX':('2020-04-03','2025-04-03'),'MCD':('2020-04-03','2025-04-03'),'RIVN':('2020-04-03','2025-04-03'),'INTC':('2020-04-03','2025-04-03')}
+stocks = ['INTC']#'AMBA','NVDA','META']
 for stock in stocks:
     print("Is "+stock+" a good coffee? "+str(is_coffee_and_handle(stock,dict[stock][0],dict[stock][1])))
