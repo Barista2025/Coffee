@@ -13,10 +13,10 @@ import time
 
 from sklearn.metrics import confusion_matrix, classification_report
 
-def is_coffee_and_handle(STK,START,END):
+def is_coffee_and_handle(STK):
     time.sleep(2)  # 每支股票之間等 2 秒
-    price = yf.Ticker(STK).history(start=START,end=END, interval='1d').Close
-    date = yf.Ticker(STK).history(start=START,end=END, interval='1d').index
+    price = yf.Ticker(STK).history(period='5y', interval='1d').Close
+    date = yf.Ticker(STK).history(period='5y', interval='1d').index
     l = len(price)
     next_cup = False
     cup_id = 1 
@@ -78,9 +78,9 @@ def is_coffee_and_handle(STK,START,END):
                             ax.set_ylim(y_min * 0.95, y_max * 1.10)  # 下壓 5%、上留 10%
                             ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=30))  # 最多顯示 10 格
                             plt.title(STK+" cup "+str(cup_id))
-                            plt.savefig('image/'+STK+'_cup'+str(cup_id)+'.png')
+                            plt.savefig('image/'+STK+'/cup'+str(cup_id)+'.png')
+                            plt.close()
                             cup_id += 1
-                            #plt.show()
                             next_cup = True
                             i = p
                             break
@@ -89,8 +89,8 @@ def is_coffee_and_handle(STK,START,END):
         i -= 1
     return False
 
-dict = {'AMBA':('2020-04-03','2025-04-03'),'NVDA':('2015-12-30','2022-10-14'),'META':('2020-04-03','2025-04-03'),'TSM':('2020-04-03','2025-04-03'),'SBUX':('2020-04-03','2025-04-03'),'MCD':('2020-04-03','2025-04-03'),'RIVN':('2020-04-03','2025-04-03'),'INTC':('2020-04-03','2025-04-03')}
-stocks = ['MCD']#'AMBA','NVDA','META']
+stocks = ['MCD','AMBA','NVDA','META','TSM','INTC','SBUX']
 os.system("rm -rf image/*")
 for stock in stocks:
-    is_coffee_and_handle(stock,dict[stock][0],dict[stock][1])
+    os.system("mkdir -p image/"+stock)
+    is_coffee_and_handle(stock)
