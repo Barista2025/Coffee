@@ -1,11 +1,11 @@
 import yfinance as yf
 import numpy as np
 import pandas as pd
-import sys
+import sys 
 import os
-import matplotlib as mpl
+import matplotlib as mpl 
 mpl.use('Qt5Agg')
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 import matplotlib.ticker as mticker
 import talib
 import math
@@ -19,8 +19,8 @@ def is_coffee_and_handle(STK,START,END):
     date = yf.Ticker(STK).history(start=START,end=END, interval='1d').index
     l = len(price)
     next_cup = False
-    cup_id = 1
-    i = l-1
+    cup_id = 1 
+    i = l-1 
     while i>0:
         if price.iloc[i]>price.iloc[i-1]:
             j = i-1 #pivot1
@@ -29,21 +29,18 @@ def is_coffee_and_handle(STK,START,END):
             handle_right=j
             for k in range(j-1,0,-1):
                 if next_cup:
-                    print("New i:"+str(i)+" "+str(date[i].date()))
                     next_cup = False
                     break
                 if price.iloc[k]<price.iloc[j]:
                     break
                 if price.iloc[k]>price.iloc[k-1]:
-                    #print("p(k)="+str(price.iloc[k])+" period="+str(j-k)+" ratio="+str(price.iloc[k]/price.iloc[j]))
-                    #print("Debug i:"+str(i)+" "+str(date[i].date()))
                     r = k #cup right point
                     if ((j-r)>10) or ((handle_right-r)<5) or (price.iloc[r]>(price.iloc[handle_right]*1.12)):
                         continue
                     for p in range(r-1,-1,-1):
                         if ((r-p)<lookback_window and (price.iloc[p] > price.iloc[r])):
                             break
-                    
+
                         if ((r-p)>=lookback_window) and (price.iloc[p] > price.iloc[r]) and (price.iloc[p]<=(1.07*price.iloc[r])):
                             originR = r
                             tmpR = r
@@ -55,12 +52,20 @@ def is_coffee_and_handle(STK,START,END):
                                     max_R_idx = tmpR
                                 tmpR += 1
                             r = max_R_idx
-                        
+
+                            #check gap < 40% and enough points near the bottom
+                            bottom = price.iloc[p+1:r].min()
+                            pivot = min(price.iloc[p],price.iloc[r])
+                            max_ratio = (1-bottom/pivot)
+                            inliner = 0
+                            for x in range(p+1,r):
+                                if ((1-bottom/price.iloc[x]) < (max_ratio/3)) and ((1-price.iloc[x]/pivot) > 0.05):
+                                    inliner += 1
+                            if (max_ratio>0.4) or ((inliner/(r-p-1))<0.05):
+                                break
+                            print('cup'+str(cup_id)+' max_ratio = '+str(max_ratio)+',in liner ratio = '+str(inliner/(r-p-1)))
+
                             left_idx = p
-                            print("Found potential Cup and Handle")
-                            print(f"Right edge price: {price.iloc[handle_right]} @ {date[handle_right].date()}")
-                            print(f"Left point higher than right: {price.iloc[left_idx]} @ {date[left_idx].date()}")
-                            print(str(price.iloc[handle_right])+" "+str(date[handle_right]))
                             fig,ax=plt.subplots()
                             ax.plot(price.iloc[left_idx:handle_right+1],label='Price')
                             ax.plot(date[originR], price.iloc[originR], 'yo', label='Orginal Cup Right')
@@ -73,10 +78,10 @@ def is_coffee_and_handle(STK,START,END):
                             ax.set_ylim(y_min * 0.95, y_max * 1.10)  # 下壓 5%、上留 10%
                             ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=30))  # 最多顯示 10 格
                             plt.title(STK+" cup "+str(cup_id))
+                            plt.savefig('image/'+STK+'_cup'+str(cup_id)+'.png')
                             cup_id += 1
-                            plt.show()
+                            #plt.show()
                             next_cup = True
-                            print("Assume p:"+str(p)+" "+str(date[p].date()))
                             i = p
                             break
                         if price.iloc[p]>(1.07*price.iloc[r]):
@@ -86,5 +91,6 @@ def is_coffee_and_handle(STK,START,END):
 
 dict = {'AMBA':('2020-04-03','2025-04-03'),'NVDA':('2015-12-30','2022-10-14'),'META':('2020-04-03','2025-04-03'),'TSM':('2020-04-03','2025-04-03'),'SBUX':('2020-04-03','2025-04-03'),'MCD':('2020-04-03','2025-04-03'),'RIVN':('2020-04-03','2025-04-03'),'INTC':('2020-04-03','2025-04-03')}
 stocks = ['MCD']#'AMBA','NVDA','META']
+os.system("rm -rf image/*")
 for stock in stocks:
-    print("Is "+stock+" a good coffee? "+str(is_coffee_and_handle(stock,dict[stock][0],dict[stock][1])))
+    is_coffee_and_handle(stock,dict[stock][0],dict[stock][1])
