@@ -56,6 +56,10 @@ def is_coffee_and_handle(STK):
                             #check gap < 40% and enough points near the bottom
                             bottom = price.iloc[p+1:r].min()
                             pivot = min(price.iloc[p],price.iloc[r])
+                            #handle right must > MA50 and in the upper part of cup 
+                            pivot2 = (bottom + max(price.iloc[p],price.iloc[r]))/2
+                            if (price.iloc[handle_right]<pivot2) or (price.iloc[handle_right]<MA50.iloc[handle_right]):
+                                break
                             max_ratio = (1-bottom/pivot)
                             inliner = 0
                             for x in range(p+1,r):
