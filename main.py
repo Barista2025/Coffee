@@ -16,7 +16,9 @@ from sklearn.metrics import confusion_matrix, classification_report
 def is_coffee_and_handle(STK):
     time.sleep(2)  # 每支股票之間等 2 秒
     price = yf.Ticker(STK).history(period='5y', interval='1d').Close
+    vol = yf.Ticker(STK).history(period='5y', interval='1d').Volume
     date = yf.Ticker(STK).history(period='5y', interval='1d').index
+    price50 = price.rolling(50).mean()
     l = len(price)
     next_cup = False
     cup_id = 1 
@@ -53,19 +55,24 @@ def is_coffee_and_handle(STK):
                                 tmpR += 1
                             r = max_R_idx
 
-                            #check gap < 40% and enough points near the bottom
                             bottom = price.iloc[p+1:r].min()
                             pivot = min(price.iloc[p],price.iloc[r])
-                            #handle right must > MA50 and in the upper part of cup 
+                            #handle right must > MA50 and in the upper part of cup
                             pivot2 = (bottom + max(price.iloc[p],price.iloc[r]))/2
-                            if (price.iloc[handle_right]<pivot2) or (price.iloc[handle_right]<MA50.iloc[handle_right]):
+                            if (price.iloc[handle_right]<pivot2) or (price.iloc[handle_right]<price50.iloc[handle_right]):
                                 break
+                            #handle volume not too much
+                            handle_avg = vol[r+1:handle_right+1].mean()
+                            cup_avg = vol[p:r+1].mean()
+                            if handle_avg>cup_avg:
+                                break
+                            #check gap < 40% and enough points near the bottom
                             max_ratio = (1-bottom/pivot)
                             inliner = 0
                             for x in range(p+1,r):
                                 if ((1-bottom/price.iloc[x]) < (max_ratio/3)) and ((1-price.iloc[x]/pivot) > 0.05):
                                     inliner += 1
-                            if (max_ratio>0.4) or ((inliner/(r-p-1))<0.05):
+                            if (max_ratio>0.4) or ((inliner/(r-p-1))<0.05) or (handle_right<pivot2):
                                 break
                             print('cup'+str(cup_id)+' max_ratio = '+str(max_ratio)+',in liner ratio = '+str(inliner/(r-p-1)))
 
