@@ -16,5 +16,5 @@ fp = open("history/stock_list.txt","r")
 stocks = fp.read().split('\n')[:-1]
 for stock in stocks:
     print(stock)
-    df = pd.read_csv('history/'+stock+'.csv')
+    df = pd.read_csv('history/'+stock+'.csv', date_format="%m/%d/%Y")
     is_coffee_and_handle(stock,df)
