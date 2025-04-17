@@ -13,7 +13,7 @@ import time
 
 from sklearn.metrics import confusion_matrix, classification_report
 
-def taste_coffee(STK,POS_ARR,DF=None):
+def taste_coffee(STK,POS_ARR,DF=None,FOLDER='image'):
     price = DF.Close
     vol = DF.Volume
     price.index = pd.to_datetime(DF.Date,utc = True,format='ISO8601')
@@ -22,6 +22,8 @@ def taste_coffee(STK,POS_ARR,DF=None):
     fn = 0
     r0 = 0.9
     r1 = 1.1
+    if (len(POS_ARR)==1) and (POS_ARR[0]==''):
+        return 0
     for p in POS_ARR:
         pos = int(p)
         p0 = price.iloc[pos]
@@ -40,15 +42,19 @@ def taste_coffee(STK,POS_ARR,DF=None):
         return tn/(tn+fn)*100
     return 0
 
+folder = sys.argv[1]
 fp = open("history/stock_list.txt","r")
 stocks = fp.read().split('\n')[:-1]
 os.system("rm -rf review.txt")
+candy = []
 for stock in stocks:
     print(stock)
     df = pd.read_csv('history/'+stock+'.csv', date_format="%m/%d/%Y")
-    fp2 = open("image/"+stock+"/report.txt","r")
+    fp2 = open(FOLDER+"/"+stock+"/report.txt","r")
     string = fp2.read()[1:-2]
     pos_arr = string.split(',')
-    ret = taste_coffee(stock,pos_arr,df)
-    os.system("echo '"+stock+":"+str(ret)+"%' >> review.txt")
-
+    ret = taste_coffee(stock,pos_arr,df,folder)
+    candy.append((ret,stock))
+candy.sort(key=lambda x:x[0],reverse=False)
+for C in candy:
+    os.system("echo '"+C[1]+":"+str(C[0])+"%' >> review.txt")
