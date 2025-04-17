@@ -1,11 +1,11 @@
 import yfinance as yf
 import numpy as np
 import pandas as pd
-import sys 
+import sys
 import os
-import matplotlib as mpl 
+import matplotlib as mpl
 mpl.use('Qt5Agg')
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import talib
 import math
@@ -13,11 +13,12 @@ import time
 
 from sklearn.metrics import confusion_matrix, classification_report
 
-def is_coffee_and_handle(STK,DF=None,MODE=0):
-    if (MODE == 1) or (MODE == 3): 
-        os.system("rm -rf image/"+STK+"/*.png")
+def is_coffee_and_handle(STK,DF=None,MODE=0,FOLDER='image'):
+    os.system("mkdir -p "+FOLDER+"/"+STK)
+    if (MODE == 1) or (MODE == 3):
+        os.system("rm -rf "+FOLDER+"/"+STK+"/*.png")
     if MODE>=2:
-        os.system("rm -rf image/"+STK+"/report.txt")
+        os.system("rm -rf "+FOLDER+"/"+STK+"/*.txt")
     if DF is None:
         time.sleep(2)  # 每支股票之間等 2 秒
         price = yf.Ticker(STK).history(period='5y', interval='1d').Close
@@ -30,16 +31,18 @@ def is_coffee_and_handle(STK,DF=None,MODE=0):
     price50 = price.rolling(50).mean()
     l = len(price)
     handle_arr = []
+    handle_date_arr = []
     next_cup = False
     cup_id = 1 
-    i = l-1 
-    while i>0:
+    i = 40
+    boundary = 0
+    while i<l:
         if price.iloc[i]>price.iloc[i-1]:
             j = i-1 #pivot1
             # 條件：往前推35天內，是否有價格 >= price[j]
             lookback_window = 35
             handle_right=j
-            for k in range(j-1,0,-1):
+            for k in range(j-1,boundary,-1):
                 if next_cup:
                     next_cup = False
                     break
@@ -49,10 +52,10 @@ def is_coffee_and_handle(STK,DF=None,MODE=0):
                     r = k #cup right point
                     if ((j-r)>10) or ((handle_right-r)<5) or (price.iloc[r]>(price.iloc[handle_right]*1.12)):
                         continue
-                    for p in range(r-1,-1,-1):
+                    for p in range(r-1,boundary,-1):
                         if ((r-p)<lookback_window and (price.iloc[p] > price.iloc[r])):
                             break
-
+                    
                         if ((r-p)>=lookback_window) and (price.iloc[p] > price.iloc[r]) and (price.iloc[p]<=(1.07*price.iloc[r])):
                             originR = r
                             tmpR = r
@@ -87,6 +90,7 @@ def is_coffee_and_handle(STK,DF=None,MODE=0):
                             left_idx = p
                             if MODE>=2:
                                 handle_arr.append(handle_right)
+                                handle_date_arr.append(str(price.index[handle_right])+":"+str(price.iloc[handle_right]))
                             if (MODE == 1) or (MODE == 3):
                                 fig,ax=plt.subplots()
                                 ax.plot(price.iloc[left_idx:handle_right+1],label='Price')
@@ -100,14 +104,16 @@ def is_coffee_and_handle(STK,DF=None,MODE=0):
                                 ax.set_ylim(y_min * 0.95, y_max * 1.10)  # 下壓 5%、上留 10%
                                 ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=30))  # 最多顯示 10 格
                                 plt.title(STK+" cup "+str(cup_id))
-                                plt.savefig('image/'+STK+'/cup'+str(cup_id)+'.png')
+                                plt.savefig(FOLDER+'/'+STK+'/cup'+str(cup_id)+'.png')
                                 plt.close()
                             cup_id += 1
                             next_cup = True
-                            i = p
+                            boundary = handle_right
+                            i = handle_right+40
                             break
                         if price.iloc[p]>(1.07*price.iloc[r]):
                             break
-        i -= 1
+        i += 1
     if MODE>=2:
-        os.system("echo '"+str(handle_arr)+"' >> image/"+STK+"/report.txt")
+        os.system("echo '"+str(handle_date_arr)+"' >> "+FOLDER+"/"+STK+"/date.txt")
+        os.system("echo '"+str(handle_arr)+"' >> "+FOLDER+"/"+STK+"/report.txt")
