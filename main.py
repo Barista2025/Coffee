@@ -18,13 +18,23 @@ from sklearn.model_selection import train_test_split
 
 file_list = glob.glob(r'./image2/*/*.png')
 file_list.sort()
+X = []
+y = []
+for file in file_list:
+    data = cv2.imread(file,0) / 255.0
+    label = 1
+    X.append(data)
+    y.append(label)
+
+file_list = glob.glob(r'./BAD/*.png')
+file_list.sort()
 for file in file_list:
     print(file)
+    data = cv2.imread(file,0) / 255.0
+    label = 0 
+    X.append(data)
+    y.append(label)
 
-#data = cv2.imread('zero.jpg',0) / 255.0
-#label = 0 # label/class of the image
-#X.append(data)
-#y.append(label)
-#for stock in stocks:
-#    os.system("mkdir -p image/"+stock)
-#    is_coffee_and_handle(stock)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+
+print(str(len(X_train))+" "+str(len(X_test))+" "+str(len(y_train))+" "+str(len(y_test)))
