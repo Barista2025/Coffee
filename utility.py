@@ -4,7 +4,6 @@ import pandas as pd
 import sys
 import os
 import matplotlib as mpl
-mpl.use('Qt5Agg')
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import talib
@@ -13,7 +12,7 @@ import time
 
 from sklearn.metrics import confusion_matrix, classification_report
 
-def is_coffee_and_handle(STK,DF=None,MODE=0,FOLDER='image'):
+def is_coffee_and_handle(STK,DF=None,MODE=0,FOLDER='image',BAD_CUP_ID = 1, BAD_MAX = 10000):
     os.system("mkdir -p "+FOLDER+"/"+STK)
     if (MODE == 1) or (MODE == 3):
         os.system("rm -rf "+FOLDER+"/"+STK+"/*.png")
@@ -33,8 +32,9 @@ def is_coffee_and_handle(STK,DF=None,MODE=0,FOLDER='image'):
     handle_arr = []
     handle_date_arr = []
     next_cup = False
-    cup_id = 1 
-    i = 40
+    cup_id = 1
+    print(BAD_CUP_ID)
+    i = 41
     boundary = 0
     while i<l:
         if price.iloc[i]>price.iloc[i-1]:
@@ -54,6 +54,19 @@ def is_coffee_and_handle(STK,DF=None,MODE=0,FOLDER='image'):
                         continue
                     for p in range(r-1,boundary,-1):
                         if ((r-p)<lookback_window and (price.iloc[p] > price.iloc[r])):
+                            if (BAD_CUP_ID<=BAD_MAX) and (MODE == 0):
+                                fig,ax=plt.subplots()
+                                ax.plot(price.iloc[handle_right-40:handle_right],label='Price')
+                                ax.legend()
+                                y_min = price.iloc[handle_right-40:handle_right].min()
+                                y_max = price.iloc[handle_right-40:handle_right].max()
+                                #print(str(y_min)+" "+str(y_max)+" "+str(handle_right))
+                                ax.set_ylim(y_min * 0.95, y_max * 1.10)  # 下壓 5%、上留 10% 
+                                ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=30))  # 最多顯示 10 格
+                                plt.title(STK+" cup "+str(BAD_CUP_ID))
+                                plt.savefig(FOLDER+'/BAD/cup'+str(BAD_CUP_ID)+'.png')
+                                BAD_CUP_ID += 1
+                                plt.close() 
                             break
                     
                         if ((r-p)>=lookback_window) and (price.iloc[p] > price.iloc[r]) and (price.iloc[p]<=(1.07*price.iloc[r])):
@@ -73,6 +86,18 @@ def is_coffee_and_handle(STK,DF=None,MODE=0,FOLDER='image'):
                             #handle right must > MA50 and in the upper part of cup
                             pivot2 = (bottom + max(price.iloc[p],price.iloc[r]))/2
                             if (price.iloc[handle_right]<pivot2) or (price.iloc[handle_right]<price50.iloc[handle_right]):
+                                if (BAD_CUP_ID<=BAD_MAX) and (MODE == 0):
+                                    fig,ax=plt.subplots()
+                                    ax.plot(price.iloc[handle_right-40:handle_right],label='Price')
+                                    ax.legend()
+                                    y_min = price.iloc[handle_right-40:handle_right].min()
+                                    y_max = price.iloc[handle_right-40:handle_right].max()
+                                    ax.set_ylim(y_min * 0.95, y_max * 1.10)  # 下壓 5%、上留 10%
+                                    ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=30))  # 最多顯示 10 格
+                                    plt.title(STK+" cup "+str(BAD_CUP_ID))
+                                    plt.savefig(FOLDER+'/BAD/cup'+str(BAD_CUP_ID)+'.png')
+                                    BAD_CUP_ID += 1
+                                    plt.close()
                                 break
                             #handle volume not too much
                             handle_avg = vol[r+1:handle_right+1].mean()
@@ -93,17 +118,18 @@ def is_coffee_and_handle(STK,DF=None,MODE=0,FOLDER='image'):
                                 handle_date_arr.append(str(price.index[handle_right])+":"+str(price.iloc[handle_right]))
                             if (MODE == 1) or (MODE == 3):
                                 fig,ax=plt.subplots()
-                                ax.plot(price.iloc[left_idx:handle_right+1],label='Price')
-                                ax.plot(price.index[originR], price.iloc[originR], 'yo', label='Orginal Cup Right')
-                                ax.plot(price.index[r], price.iloc[r], 'ro', label='Cup Right')
-                                ax.plot(price.index[handle_right], price.iloc[handle_right], 'bo', label='Handle Right')
-                                ax.plot(price.index[left_idx], price.iloc[left_idx], 'go', label='Cup Left')
-                                ax.legend()
+                                ax.plot(price.iloc[left_idx:handle_right+1])
+                                #ax.plot(price.index[originR], price.iloc[originR], 'yo', label='Orginal Cup Right')
+                                #ax.plot(price.index[r], price.iloc[r], 'ro', label='Cup Right')
+                                #ax.plot(price.index[handle_right], price.iloc[handle_right], 'bo', label='Handle Right')
+                                #ax.plot(price.index[left_idx], price.iloc[left_idx], 'go', label='Cup Left')
+                                #ax.legend()
                                 y_min = price.iloc[left_idx:handle_right+1].min()
                                 y_max = price.iloc[left_idx:handle_right+1].max()
-                                ax.set_ylim(y_min * 0.95, y_max * 1.10)  # 下壓 5%、上留 10%
-                                ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=30))  # 最多顯示 10 格
-                                plt.title(STK+" cup "+str(cup_id))
+                                #ax.set_ylim(y_min * 0.95, y_max * 1.10)  # 下壓 5%、上留 10%
+                                #ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=30))  # 最多顯示 10 格
+                                #plt.title(STK+" cup "+str(cup_id))
+                                fig.set_size_inches(1.6,1.2)
                                 plt.savefig(FOLDER+'/'+STK+'/cup'+str(cup_id)+'.png')
                                 plt.close()
                             cup_id += 1
@@ -117,3 +143,4 @@ def is_coffee_and_handle(STK,DF=None,MODE=0,FOLDER='image'):
     if MODE>=2:
         os.system("echo '"+str(handle_date_arr)+"' >> "+FOLDER+"/"+STK+"/date.txt")
         os.system("echo '"+str(handle_arr)+"' >> "+FOLDER+"/"+STK+"/report.txt")
+    return BAD_CUP_ID
