@@ -56,14 +56,10 @@ def is_coffee_and_handle(STK,DF=None,MODE=0,FOLDER='image',BAD_CUP_ID = 1, BAD_M
                         if ((r-p)<lookback_window and (price.iloc[p] > price.iloc[r])):
                             if (BAD_CUP_ID<=BAD_MAX) and (MODE == 0):
                                 fig,ax=plt.subplots()
-                                ax.plot(price.iloc[handle_right-40:handle_right],label='Price')
-                                ax.legend()
+                                ax.plot(price.iloc[handle_right-40:handle_right])
                                 y_min = price.iloc[handle_right-40:handle_right].min()
                                 y_max = price.iloc[handle_right-40:handle_right].max()
-                                #print(str(y_min)+" "+str(y_max)+" "+str(handle_right))
-                                ax.set_ylim(y_min * 0.95, y_max * 1.10)  # 下壓 5%、上留 10% 
-                                ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=30))  # 最多顯示 10 格
-                                plt.title(STK+" cup "+str(BAD_CUP_ID))
+                                fig.set_size_inches(1.6,1.2)
                                 plt.savefig(FOLDER+'/BAD/cup'+str(BAD_CUP_ID)+'.png')
                                 BAD_CUP_ID += 1
                                 plt.close() 
@@ -88,13 +84,10 @@ def is_coffee_and_handle(STK,DF=None,MODE=0,FOLDER='image',BAD_CUP_ID = 1, BAD_M
                             if (price.iloc[handle_right]<pivot2) or (price.iloc[handle_right]<price50.iloc[handle_right]):
                                 if (BAD_CUP_ID<=BAD_MAX) and (MODE == 0):
                                     fig,ax=plt.subplots()
-                                    ax.plot(price.iloc[handle_right-40:handle_right],label='Price')
-                                    ax.legend()
+                                    ax.plot(price.iloc[handle_right-40:handle_right])
                                     y_min = price.iloc[handle_right-40:handle_right].min()
                                     y_max = price.iloc[handle_right-40:handle_right].max()
-                                    ax.set_ylim(y_min * 0.95, y_max * 1.10)  # 下壓 5%、上留 10%
-                                    ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=30))  # 最多顯示 10 格
-                                    plt.title(STK+" cup "+str(BAD_CUP_ID))
+                                    fig.set_size_inches(1.6,1.2)
                                     plt.savefig(FOLDER+'/BAD/cup'+str(BAD_CUP_ID)+'.png')
                                     BAD_CUP_ID += 1
                                     plt.close()
