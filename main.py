@@ -16,6 +16,7 @@ import glob
 from keras.models import Sequential
 from keras.layers import Dense
 from sklearn.model_selection import train_test_split
+from keras.layers import Dropout
 
 def show_train_history(train_history,train,validation):
     plt.plot(train_history.history[train])
@@ -76,12 +77,13 @@ y_TrainOneHot=to_categorical(y_train)
 y_TestOneHot=to_categorical(y_test)
 
 model = Sequential()
-model.add(Dense(units=256,input_dim=19200,kernel_initializer='normal',activation='relu'))
+model.add(Dense(units=1000,input_dim=19200,kernel_initializer='normal',activation='relu'))
+model.add(Dense(units=1000,kernel_initializer='normal',activation='relu'))
 model.add(Dense(units=2,kernel_initializer='normal',activation='softmax'))
 print(model.summary())
 model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
 train_history=model.fit(x=x_Train_normalize,y=y_TrainOneHot,
-            validation_split=0.2,epochs=10,batch_size=200,verbose=2)
+            validation_split=0.2,epochs=20,batch_size=200,verbose=2)
 show_train_history(train_history,'accuracy','val_accuracy')
 show_train_history(train_history,'loss','val_loss')
 scores=model.evaluate(x_Test_normalize,y_TestOneHot)
