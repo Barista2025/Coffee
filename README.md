@@ -8,3 +8,4 @@ for different waveforms:
   7. improve accuracy of dl model
 8. stock selection system
 9. back testing system
+   9-1. drink coffee and spend money
