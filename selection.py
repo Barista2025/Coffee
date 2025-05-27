@@ -7,5 +7,5 @@ import time
 import numpy as np
 
 def get_stock_list():
-    stock_list = ['AMBA','META','NVDA','TSM']
+    stock_list = ['AMBA','META','NVDA','TSLA']
     return stock_list
