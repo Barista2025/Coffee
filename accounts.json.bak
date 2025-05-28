@@ -1,0 +1,26 @@
+[
+    {
+        "balance": 10000,
+        "id":"AMBA",
+        "share": 0,
+        "last_price": 0
+    },
+    {
+        "balance": 10000,
+        "id":"META",
+        "share": 0,
+        "last_price": 0
+    },  
+    {   
+        "balance": 10000,
+        "id":"NVDA",
+        "share": 0,
+        "last_price": 0
+    },  
+    {   
+        "balance": 10000,
+        "id":"TSLA",
+        "share": 0,
+        "last_price": 0
+    }  
+]
