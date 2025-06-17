@@ -19,49 +19,60 @@ accounts = json.load(input_file)
 total_cost = 0
 total_earn = 0
 hit_rate = 0
-success = 0
-fail = 0
-reward = 0
-loss = 0
-for account in accounts:
-    balance = account['balance']
-    ID = account['id']
-    share = account['share']
-    last_price = account['last_price']
-    total_cost += balance
-    print(ID)
-    df = pd.read_csv('history/'+ID+'.csv', date_format="%m/%d/%Y")
-    price = df.Close
-    drink = {}
-    coffee_arr = is_coffee_and_handle(ID,df)
-    for c in coffee_arr:
-        drink[c] = 1
-    r1 = 0.9
-    r2 = 2.0
-    #MA20 = price.rolling(20).mean()
-    for i in range(0,1259):
+
+loss = [0,0,0,0]
+fail = [0,0,0,0]
+success = [0,0,0,0]
+reward = [0,0,0,0]
+
+
+for i in range(0,1259):
+    catg = 0
+    stock_list = get_stock_list(i,4)
+    index = 0
+
+    for account in accounts:
+        balance = account['balance']
+        ID = account['id']
+        share = account['share']
+        last_price = account['last_price']
+        total_cost += balance
+        df = pd.read_csv('history/'+ID+'.csv', date_format="%m/%d/%Y")
+        price = df.Close
+        r1 = 0.9 #stop loss
+        r2 = 2.0 #take profit
+        if ID == '':
+            ID = stock_list[index]
+            index += 1
+        res = is_coffee_and_handle(ID,df):wq
         if (share>0) and ((price.iloc[i]<=(last_price*r1)) or (price.iloc[i]>=(last_price*r2))):
             if price.iloc[i]<last_price:
                 rate = ((last_price-price.iloc[i])/last_price*100)
                 print("debug rate = "+str(rate))
-                loss += rate
-                fail += 1
+                loss[index] += rate
+                fail[index] += 1
             else:
-                success += 1
+                success[index] += 1
                 rate = ((price.iloc[i]-last_price)/last_price*100)
-                reward += rate
+                reward[index] += rate
             balance += (price.iloc[i]*share)
-            share = 0
-            last_price = 0
-        elif (i in drink) and (share==0):
+            share = 0 
+            last_price = 0 
+        elif (res == 'Y') and (share==0):
             last_price = price.iloc[i]
             share = balance // price.iloc[i]
             balance -= (last_price*share)
             print('Let\'s drink!! '+str(i))
-    if share>0:
-        balance += (price.iloc[1258]*share)
-        if price.iloc[i]<last_price:
-            rate = ((last_price-price.iloc[i])/last_price*100)
+
+        account['balance'] = balance
+        account['id'] = ID
+        account['share'] = share
+        account['last_price'] = last_price
+ 
+if share>0:
+    balance += (price.iloc[1258]*share)
+    if price.iloc[i]<last_price:
+        rate = ((last_price-price.iloc[i])/last_price*100)
             loss += rate
             fail += 1
         else:
