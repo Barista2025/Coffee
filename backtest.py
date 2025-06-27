@@ -12,6 +12,7 @@ import json
 import numpy as np
 from selection import get_stock_list
 from utility_bt import is_coffee_and_handle
+np.set_printoptions(legacy='1.25')
 
 #stock_list = get_stock_list()
 input_file = open ('accounts.json')
@@ -26,7 +27,7 @@ success = [0,0,0,0]
 reward = [0,0,0,0]
 
 
-for i in range(0,1259):
+for i in range(20,1259):
     catg = 0
     stock_list = get_stock_list(i,4)
     index = 0
@@ -37,14 +38,17 @@ for i in range(0,1259):
         share = account['share']
         last_price = account['last_price']
         total_cost += balance
+        if index == len(stock_list):
+            break
+        if ID == '':
+            print(f"{index} {stock_list}")
+            ID = stock_list[index][0]
+            index += 1
         df = pd.read_csv('history/'+ID+'.csv', date_format="%m/%d/%Y")
         price = df.Close
         r1 = 0.9 #stop loss
         r2 = 2.0 #take profit
-        if ID == '':
-            ID = stock_list[index]
-            index += 1
-        res = is_coffee_and_handle(ID,df):wq
+        res = is_coffee_and_handle(i,ID,df)
         if (share>0) and ((price.iloc[i]<=(last_price*r1)) or (price.iloc[i]>=(last_price*r2))):
             if price.iloc[i]<last_price:
                 rate = ((last_price-price.iloc[i])/last_price*100)
@@ -58,7 +62,7 @@ for i in range(0,1259):
             balance += (price.iloc[i]*share)
             share = 0 
             last_price = 0 
-        elif (res == 'Y') and (share==0):
+        elif (res == "Y") and (share==0):
             last_price = price.iloc[i]
             share = balance // price.iloc[i]
             balance -= (last_price*share)
@@ -68,18 +72,23 @@ for i in range(0,1259):
         account['id'] = ID
         account['share'] = share
         account['last_price'] = last_price
- 
-if share>0:
-    balance += (price.iloc[1258]*share)
-    if price.iloc[i]<last_price:
-        rate = ((last_price-price.iloc[i])/last_price*100)
-            loss += rate
-            fail += 1
+
+index = 0
+for account in accounts:
+    df = pd.read_csv('history/'+account['id']+'.csv', date_format="%m/%d/%Y")
+    price = df.Close
+    if account['share']>0:
+        account['balance'] += (price.iloc[1258]*account['share'])
+        if price.iloc[-1]<account['last_price']:
+            rate = ((account['last_price']-price.iloc[-1])/account['last_price']*100)
+            loss[index] += rate
+            fail[index] += 1
         else:
-            success += 1
-            rate = ((price.iloc[i]-last_price)/last_price*100)
-            reward += rate
-    total_earn += balance
+            success[index] += 1
+            rate = ((price.iloc[-1]-account['last_price'])/account['last_price']*100)
+            reward[index] += rate
+    total_earn += account['balance']
+    index += 1
 
 num = success+fail
 rev_rate = ((total_earn-total_cost)/total_cost*100)

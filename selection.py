@@ -7,23 +7,17 @@ import time
 import numpy as np
 import requests
 
-def get_stock_list(li = -1):
-    API_KEY = "d0s38k1r01qumepheougd0s38k1r01qumepheov0"
-    symbol = "AMBA"
-    url0 = f"https://finnhub.io/api/v1/stock/earnings?symbol={symbol}&token={API_KEY}"
-    url = f"https://finnhub.io/api/v1/calendar/earnings?from=2019-01-02&to=2024-01-02&symbol={symbol}&token={API_KEY}"
-    res = requests.get(url0)
-    print(res.json())
-    '''
-    for item in res.json():
-        print(item)
-    stock_list = ['AMBA','META','NVDA','TSLA']
+def get_stock_list(li = -1,catg = 4):
+    stock_list = []
     fp = open("history/stock_list.txt","r")
     stocks = fp.read().split('\n')[:-1]
     for stock in stocks:
-        print(stock)
-        df = pd.read_csv('history/'+stock+'.csv', date_format="%m/%d/%Y")
-
-    return stock_list'''
-
-get_stock_list()
+        #print(f"{stock}")
+        price = pd.read_csv('history/'+stock+'.csv', date_format="%m/%d/%Y").Close
+        volume = pd.read_csv('history/'+stock+'.csv', date_format="%m/%d/%Y").Volume
+        MA20 = price.rolling(20).mean()
+        if price.iloc[li]>MA20.iloc[li]:
+            stock_list.append((stock,volume.iloc[li]))
+    stock_list = sorted(stock_list, key=lambda x: x[1],reverse=True)
+    print(stock_list[0:catg])
+    return stock_list[0:catg]
